@@ -7,7 +7,7 @@
         url = require('url'),
         provider,
         providerUrl,
-        config = JSON.parse(fs.readFileSync('config.json'));
+        config = JSON.parse(fs.readFileSync('dobae.config.json'));
 
     config.sources.forEach(function(source) {
         // console.log(source);
