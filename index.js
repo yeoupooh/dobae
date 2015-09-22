@@ -9,12 +9,12 @@
     var fs = require('fs'),
         https = require('https'),
         url = require('url'),
-        provider,
-        providerUrl,
-        group,
-        config = JSON.parse(fs.readFileSync('dobae.config.json'));
-
-    group = config.groups['default'];
+        exec = require('child_process').exec,
+        asyncCalls = require('./asynccalls.js'),
+        asyncTasks = [],
+        selectedGroup = 'default',
+        images = [],
+        asyncParams = {};
 
     // print process.argv
     console.log(process);
@@ -22,35 +22,14 @@
         /*jslint unparam: true */
         console.log(index + ': ' + val);
         if (index === 2) {
-            group = config.groups[val];
+            selectedGroup = val;
         }
     });
 
-    console.log('group=', group);
-
-    group.providers.forEach(function (source) {
-        // console.log(source);
-        console.log(url.parse(source.url));
-    });
-
-    provider = group.providers[0];
-    providerUrl = url.parse(provider.url);
-
-    function changeBackground(image) {
-        var exec = require('child_process').exec;
-        console.log('change image=', image);
-        exec('gsettings set org.gnome.desktop.background picture-uri ' + image.url, function callback(error, stdout, stderr) {
-            /*jslint unparam: true */
-            if (error) {
-                console.error(error);
-            }
-            // result
-            // console.log('stdout=', stdout);
-        });
-    }
+    console.log('group=', selectedGroup);
 
     function getImages(posts) {
-        var images = [];
+        // var images = [];
 
         posts.forEach(function (post) {
             post.photos.forEach(function (photo) {
@@ -58,16 +37,16 @@
                 images.push(photo.original_size);
             });
         });
-
-        changeBackground(images[Math.round(Math.random() * images.length)]);
     }
 
-    function scheduledTask() {
-        var str = '',
+    function getImagesAsync(providerUrl) {
+        console.log('providerUrl=', providerUrl);
+        var parsedUrl = url.parse(providerUrl),
+            str = '',
             req = https.request({
-                hostname: providerUrl.hostname,
+                hostname: parsedUrl.hostname,
                 port: 443,
-                path: providerUrl.path,
+                path: parsedUrl.path,
                 method: 'GET'
             }, function (res) {
                 // console.log('res.statusCode=', res.statusCode);
@@ -79,6 +58,7 @@
                 res.on('end', function () {
                     // console.log(JSON.parse(str));
                     getImages(JSON.parse(str).response.posts);
+                    asyncCalls.done();
                 });
             });
 
@@ -86,6 +66,97 @@
 
         req.on('error', function (e) {
             console.error(e);
+            asyncCalls.reject(e);
+        });
+    }
+
+    function loadConfig(params) {
+        var config = JSON.parse(fs.readFileSync('dobae.config.json')),
+            group;
+
+        group = config.groups[selectedGroup];
+
+        group.providers.forEach(function (source) {
+            // console.log(source);
+            console.log(url.parse(source.url));
+        });
+
+        params.config = config;
+        params.group = group;
+    }
+
+    function clearImagesAsync(params) {
+        /*jslint unparam: true */
+        images = [];
+        asyncCalls.done();
+    }
+
+    function configBackgroudAsync(params) {
+        /*jslint unparam: true */
+        exec('gsettings set org.gnome.desktop.background picture-options scaled', function callback(error, stdout, stderr) {
+            if (error) {
+                console.error(error);
+                asyncCalls.reject(error);
+            } else {
+                asyncCalls.done(error);
+            }
+        });
+    }
+
+    function changeBackgroundAsync(params) {
+        /*jslint unparam: true */
+        var imgIndex = Math.round(Math.random() * images.length),
+            image = images[imgIndex];
+
+        console.log('images=', images.length, 'index=', imgIndex);
+        console.log('change image=', image);
+        if (image === undefined) {
+            console.error('image is undefined.');
+            asyncCalls.reject('image is undefined.');
+            return;
+        }
+        exec('gsettings set org.gnome.desktop.background picture-uri ' + image.url, function callback(error, stdout, stderr) {
+            /*jslint unparam: true */
+            if (error) {
+                console.error(error);
+                asyncCalls.reject(error);
+            } else {
+                asyncCalls.done(error);
+            }
+        });
+    }
+
+    function scheduledTask() {
+        var group;
+
+        loadConfig(asyncParams);
+        asyncTasks = [];
+        asyncTasks.push({
+            execute: clearImagesAsync,
+            options: asyncParams
+        });
+        group = asyncParams.group;
+        group.providers.forEach(function (provider) {
+            asyncTasks.push({
+                execute: getImagesAsync,
+                options: provider.url
+            });
+        });
+        asyncTasks.push({
+            execute: configBackgroudAsync,
+            options: asyncParams
+        });
+        asyncTasks.push({
+            execute: changeBackgroundAsync,
+            options: asyncParams
+        });
+        asyncCalls.start(asyncTasks, {
+            success: function () {
+                console.log('async calls are done.');
+            },
+            fail: function (reason) {
+                console.log('async calls are fail. reason=', reason);
+            }
         });
     }
 
@@ -101,5 +172,4 @@
 
     scheduledTask();
     startScheduledTask();
-
 }());
