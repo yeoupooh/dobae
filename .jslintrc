@@ -19,17 +19,8 @@
     "passfail": false,
     "plusplus": false,
     "predef": [
-        "document", "window", "navigator", "setTimeout", "location",
-        "Highcharts",
-        "angular",
-        "CryptoJS",
-        "moment",
-        "$",
-        "w2ui",
-        "define", "require",
-        "KhanCharts", "KhanJS",
-        "pageSetUp",
-        "logd", "logv", "logw", "loge", "SetLogLevel", "LogLevelEnum"
+        "console", "process",
+        "define", "require"
     ],
     "regexp": false,
     "rhino": false,
