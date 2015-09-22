@@ -106,7 +106,8 @@
     function changeBackgroundAsync(params) {
         /*jslint unparam: true */
         var imgIndex = Math.round(Math.random() * images.length),
-            image = images[imgIndex];
+            image = images[imgIndex],
+            cmd = [];
 
         console.log('images=', images.length, 'index=', imgIndex);
         console.log('change image=', image);
@@ -115,7 +116,11 @@
             asyncCalls.reject('image is undefined.');
             return;
         }
-        exec('gsettings set org.gnome.desktop.background picture-uri ' + image.url, function callback(error, stdout, stderr) {
+        cmd = [
+            'gsettings set org.gnome.desktop.background picture-uri ',
+            image.url
+        ];
+        exec(cmd.join(''), function callback(error, stdout, stderr) {
             /*jslint unparam: true */
             if (error) {
                 console.error(error);
