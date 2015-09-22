@@ -161,8 +161,9 @@
     }
 
     function startScheduledTask() {
+        console.log('asyncParams=', asyncParams);
         var cron = require('cron'),
-            cronJob = cron.job("0 0/5 * * * *", function () {
+            cronJob = cron.job(asyncParams.config.cron, function () {
                 // perform operation e.g. GET request http.get() etc.
                 scheduledTask();
                 console.info('cron job completed');
