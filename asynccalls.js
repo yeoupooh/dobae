@@ -17,7 +17,6 @@
     }
 
     function start(ts, pLast) {
-        console.log(ts);
         tasks = ts;
         last = pLast;
         index = 0;

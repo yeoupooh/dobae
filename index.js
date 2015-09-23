@@ -14,19 +14,17 @@
         asyncTasks = [],
         selectedGroup = 'default',
         images = [],
-        asyncParams = {};
+        asyncParams = {},
+        lastApiCallTime;
 
-    // print process.argv
-    console.log(process);
+    // console.log(process);
     process.argv.forEach(function (val, index, array) {
         /*jslint unparam: true */
-        console.log(index + ': ' + val);
+        // console.log(index + ': ' + val);
         if (index === 2) {
             selectedGroup = val;
         }
     });
-
-    console.log('group=', selectedGroup);
 
     function getImages(posts) {
         // var images = [];
@@ -40,7 +38,7 @@
     }
 
     function getImagesAsync(providerUrl) {
-        console.log('providerUrl=', providerUrl);
+        console.log('getImagesAsync: providerUrl=', providerUrl);
         var parsedUrl = url.parse(providerUrl),
             str = '',
             req = https.request({
@@ -76,13 +74,16 @@
 
         group = config.groups[selectedGroup];
 
-        group.providers.forEach(function (source) {
-            // console.log(source);
-            console.log(url.parse(source.url));
-        });
+        // group.providers.forEach(function (source) {
+        //     // console.log(source);
+        //     console.log(url.parse(source.url));
+        // });
 
         params.config = config;
         params.group = group;
+
+        console.info('config loaded.');
+        console.info('selected group=', selectedGroup);
     }
 
     function clearImagesAsync(params) {
@@ -93,24 +94,35 @@
 
     function configBackgroudAsync(params) {
         /*jslint unparam: true */
-        exec('gsettings set org.gnome.desktop.background picture-options scaled', function callback(error, stdout, stderr) {
-            if (error) {
-                console.error(error);
-                asyncCalls.reject(error);
-            } else {
-                asyncCalls.done(error);
-            }
-        });
+        exec(['gsettings ',
+                'set org.gnome.desktop.background ',
+                'picture-options ',
+                params.group.pictureOptions
+            ].join(''),
+            function callback(error, stdout, stderr) {
+                if (error) {
+                    console.error(error);
+                    asyncCalls.reject(error);
+                } else {
+                    asyncCalls.done(error);
+                }
+            });
+    }
+
+    // Returns a random integer between min (included) and max (excluded)
+    // Using Math.round() will give you a non-uniform distribution!
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min)) + min;
     }
 
     function changeBackgroundAsync(params) {
         /*jslint unparam: true */
-        var imgIndex = Math.round(Math.random() * images.length),
+        var imgIndex = getRandomInt(0, images.length),
             image = images[imgIndex],
             cmd = [];
 
-        console.log('images=', images.length, 'index=', imgIndex);
-        console.log('change image=', image);
+        console.info('changeBackgroundAsync: total images=', images.length, 'selected index=', imgIndex);
+        console.info('changeBackgroundAsync: image=', image);
         if (image === undefined) {
             console.error('image is undefined.');
             asyncCalls.reject('image is undefined.');
@@ -132,21 +144,32 @@
     }
 
     function scheduledTask() {
-        var group;
+        var group,
+            now = new Date(),
+            useCached;
 
         loadConfig(asyncParams);
+
+        useCached = (lastApiCallTime !== undefined && now.getTime() - lastApiCallTime.getTime() < asyncParams.group.cacheTimeMs) ? true : false;
+        console.info('useCached=', useCached, 'lastApiCallTime=', lastApiCallTime);
+        if (lastApiCallTime !== undefined) {
+            console.info('diff=', (now.getTime() - lastApiCallTime.getTime()));
+        }
         asyncTasks = [];
-        asyncTasks.push({
-            execute: clearImagesAsync,
-            options: asyncParams
-        });
-        group = asyncParams.group;
-        group.providers.forEach(function (provider) {
+        if (useCached === false) {
             asyncTasks.push({
-                execute: getImagesAsync,
-                options: provider.url
+                execute: clearImagesAsync,
+                options: asyncParams
             });
-        });
+            group = asyncParams.group;
+            group.providers.forEach(function (provider) {
+                asyncTasks.push({
+                    execute: getImagesAsync,
+                    options: provider.url
+                });
+            });
+            lastApiCallTime = new Date();
+        }
         asyncTasks.push({
             execute: configBackgroudAsync,
             options: asyncParams
@@ -157,18 +180,18 @@
         });
         asyncCalls.start(asyncTasks, {
             success: function () {
-                console.log('async calls are done.');
+                console.info('async calls are done.');
             },
             fail: function (reason) {
-                console.log('async calls are fail. reason=', reason);
+                console.error('async calls are fail. reason=', reason);
             }
         });
     }
 
     function startScheduledTask() {
-        console.log('asyncParams=', asyncParams);
+        // console.log('asyncParams=', asyncParams);
         var cron = require('cron'),
-            cronJob = cron.job(asyncParams.config.cron, function () {
+            cronJob = cron.job(asyncParams.group.cron, function () {
                 // perform operation e.g. GET request http.get() etc.
                 scheduledTask();
                 console.info('cron job completed');
