@@ -1,7 +1,9 @@
 {
-    "cron": "0/30 * * * * *",
     "groups": {
         "default": {
+            "cron": "0 */10 * * * *",
+            "cacheTimeMs": 86400000,
+            "pictureOptions": "zoom",
             "providers": [{
                 "provider": "tumblr",
                 "url": "https://api.tumblr.com/v2/blog/peacecorps.tumblr.com/posts/text?api_key=fuiKNFp9vQFvjLNvx4sUwti4Yb5yGutBN4Xh10LXZhhRKjWlV4&notes_info=true"
