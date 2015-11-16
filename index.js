@@ -11,9 +11,12 @@
         url = require('url'),
         exec = require('child_process').exec,
         asyncCalls = require('./asynccalls.js'),
+        download = require('./download.js'),
+        DOWNLOADED_WALLPAPER_FILENAME = 'downloaded-wallpaper.jpg',
         asyncTasks = [],
         selectedGroup = 'default',
         images = [],
+        selectedImage,
         asyncParams = {},
         lastApiCallTime;
 
@@ -28,6 +31,11 @@
 
     function getImages(posts) {
         // var images = [];
+
+        if (posts === undefined) {
+            console.error('posts not found.');
+            return;
+        }
 
         posts.forEach(function (post) {
             post.photos.forEach(function (photo) {
@@ -115,13 +123,36 @@
         return Math.floor(Math.random() * (max - min)) + min;
     }
 
+    function selectImageAsync(params) {
+        /*jslint unparam: true */
+        var imgIndex = getRandomInt(0, images.length);
+
+        console.info('selectImageAsync: total images=', images.length, 'selected index=', imgIndex);
+
+        selectedImage = images[imgIndex];
+
+        asyncCalls.done();
+    }
+
+    function downloadAsync(params) {
+        /*jslint unparam: true */
+        download(selectedImage.url, __dirname + '/' + DOWNLOADED_WALLPAPER_FILENAME, function (error) {
+            if (error !== undefined) {
+                asyncCalls.reject();
+            } else {
+                asyncCalls.done();
+            }
+        });
+    }
+
     function changeBackgroundAsync(params) {
         /*jslint unparam: true */
-        var imgIndex = getRandomInt(0, images.length),
-            image = images[imgIndex],
-            cmd = [];
+        // var imgIndex = getRandomInt(0, images.length),
+        //     image = images[imgIndex],
+        //     cmd = [];
+        var cmd = [],
+            image = selectedImage;
 
-        console.info('changeBackgroundAsync: total images=', images.length, 'selected index=', imgIndex);
         console.info('changeBackgroundAsync: image=', image);
         if (image === undefined) {
             console.error('image is undefined.');
@@ -130,8 +161,10 @@
         }
         cmd = [
             'gsettings set org.gnome.desktop.background picture-uri ',
-            image.url
+            'file://' + __dirname + '/' + DOWNLOADED_WALLPAPER_FILENAME
+            // image.url
         ];
+        console.info('changeBackgroundAsync: cmd=', cmd.join(''));
         exec(cmd.join(''), function callback(error, stdout, stderr) {
             /*jslint unparam: true */
             if (error) {
@@ -172,6 +205,14 @@
         }
         asyncTasks.push({
             execute: configBackgroudAsync,
+            options: asyncParams
+        });
+        asyncTasks.push({
+            execute: selectImageAsync,
+            options: asyncParams
+        });
+        asyncTasks.push({
+            execute: downloadAsync,
             options: asyncParams
         });
         asyncTasks.push({
