@@ -34,3 +34,7 @@ npm start
 ```
 npm start <your group>
 ```
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/yeoupooh/dobae/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
