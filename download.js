@@ -46,22 +46,6 @@
 
     }
 
-    function test() {
-        var dest = 'test-download.jpg',
-            // url = 'http://www.planwallpaper.com/static/images/1080p-HD-Wallpapers-9.jpg',
-            url = 'https://41.media.tumblr.com/tumblr_lmo5z3yRxN1qguy2so1_1280.jpg';
-
-        download(url, dest, function (msg) {
-            if (msg !== undefined) {
-                console.error('error: ' + msg);
-            } else {
-                console.log('done.');
-            }
-        });
-    }
-
-    test();
-
     module.exports = download;
 
 }());
