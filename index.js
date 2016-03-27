@@ -29,20 +29,42 @@
         }
     });
 
-    function getImages(posts) {
-        // var images = [];
+    function parseImages(path, json) {
+        console.log('parseImage:', 'path=', path);
 
-        if (posts === undefined) {
-            console.error('posts not found.');
-            return;
-        }
+        if (path.startsWith('/v2/blog/')) {
+            var posts = json.response.posts;
+            if (posts === undefined) {
+                console.error('posts not found.');
+                return;
+            }
 
-        posts.forEach(function (post) {
-            post.photos.forEach(function (photo) {
-                // console.log('photo.original_size=', photo.original_size);
-                images.push(photo.original_size);
+            posts.forEach(function (post) {
+                post.photos.forEach(function (photo) {
+                    // console.log('photo.original_size=', photo.original_size);
+                    images.push(photo.original_size);
+                });
             });
-        });
+        } else if (path.startsWith('/v2/tagged')) {
+            var posts = json.response;
+            if (posts === undefined) {
+                console.error('posts not found.');
+                return;
+            }
+
+            console.log('posts', posts.length);
+
+            posts.forEach(function (post) {
+                if (post.photos) {
+                    post.photos.forEach(function (photo) {
+                        // console.log('photo.original_size=', photo.original_size);
+                        images.push(photo.original_size);
+                    });
+                }
+            });
+        } else {
+            console.error('Unknown path. path=', path);
+        }
     }
 
     function getImagesAsync(providerUrl) {
@@ -63,7 +85,7 @@
                 });
                 res.on('end', function () {
                     // console.log(JSON.parse(str));
-                    getImages(JSON.parse(str).response.posts);
+                    parseImages(parsedUrl.path, JSON.parse(str));
                     asyncCalls.done();
                 });
             });
