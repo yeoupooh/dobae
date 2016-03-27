@@ -1,0 +1,12 @@
+env:
+ - TRUN_ON_TRAVIS=true
+
+install:
+ - npm install
+
+before_script:
+ - npm test
+ - cp dobae.config.sample.json dobae.config.json
+
+script:
+ - npm start &
