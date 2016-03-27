@@ -136,13 +136,17 @@
 
     function downloadAsync(params) {
         /*jslint unparam: true */
-        download(selectedImage.url, __dirname + '/' + DOWNLOADED_WALLPAPER_FILENAME, function (error) {
-            if (error !== undefined) {
-                asyncCalls.reject();
-            } else {
-                asyncCalls.done();
-            }
-        });
+        if (selectedImage) {
+            download(selectedImage.url, __dirname + '/' + DOWNLOADED_WALLPAPER_FILENAME, function (error) {
+                if (error !== undefined) {
+                    asyncCalls.reject();
+                } else {
+                    asyncCalls.done();
+                }
+            });
+        } else {
+            console.error('selectedImage is null.');
+        }
     }
 
     function changeBackgroundAsync(params) {
