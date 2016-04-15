@@ -1,21 +1,22 @@
 {
-    "name": "dobae",
-    "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
-    "scripts": {
-        "start": "node index.js",
-        "test": "./node_modules/mocha/bin/mocha --timeout 50000 tests"
-    },
-    "dependencies": {
-        "cron": ">= 1.0.9",
-        "request": ">= 2.65.0"
-    },
-    "devDependencies": {
-        "file-type": "^3.4.0",
-        "mocha": "2.0.0",
-        "read-chunk": "^1.0.1"
-    },
-    "author": "",
-    "license": "ISC"
+  "name": "dobae",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "./node_modules/mocha/bin/mocha --timeout 50000 tests"
+  },
+  "dependencies": {
+    "cron": ">= 1.0.9",
+    "mocha": "^2.0.0",
+    "request": ">= 2.65.0"
+  },
+  "devDependencies": {
+    "file-type": "^3.4.0",
+    "mocha": "2.0.0",
+    "read-chunk": "^1.0.1"
+  },
+  "author": "",
+  "license": "ISC"
 }
